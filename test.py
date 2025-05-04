@@ -21,7 +21,7 @@ messages = get_email_messages(service, max_results=100)
 for msg in messages:
     detail = get_email_message_details(service, msg['id'])
 
-    if '@newbalance' in detail['sender']:
+    if '### @employer email ### ' in detail['sender']:
         download_attachments(service,'me',msg['id'],'### project location ###')
         break
         
