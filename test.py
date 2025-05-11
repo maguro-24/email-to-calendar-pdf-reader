@@ -1,19 +1,13 @@
 from gmail_api import init_gmail_service, get_email_messages, get_email_message_details, download_attachments
 from PyPDF2 import PdfReader
 import os
-import datetime as dt
-from google_auth_oauthlib.flow import InstalledAppFlow
-from google.auth.transport.requests import Request
-from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
-from datetime import datetime, timedelta
-from google.oauth2.credentials import Credentials
-from calender_api import init_calendar_service, add_event
-from datetime import datetime
+from datetime import datetime, timezone
+from calender_api import init_calendar_service
 
 
 
-client_file = 'client_secret.json'
+client_file = 'client_secret_new.json'
 service = init_gmail_service(client_file)
 
 messages = get_email_messages(service, max_results=100)
@@ -21,14 +15,14 @@ messages = get_email_messages(service, max_results=100)
 for msg in messages:
     detail = get_email_message_details(service, msg['id'])
 
-    if '### employer email ###' in detail['sender']:
-        download_attachments(service,'me',msg['id'],'/path/to/your/project/work_schedule/downloads')
+    if '' in detail['sender']: ### Employer email handle ### 
+        download_attachments(service,'me',msg['id'],'/path/to/Projects/work_schedule/downloads') ### IMPORTANT ###
         break
         
 
 
 
-path = '###/path/to/your/project/work_schedule/downloads###'
+path = '/path/to/Projects/work_schedule/downloads'
 dir_list = os.listdir(path)
 print("Files and directories in '", path, "' :")
 # prints all files
@@ -58,7 +52,7 @@ for i in range(len(text)):
 
 for i in range(len(text)):
     text[i] = text[i][0].split(' ')
-    if '### NAME ###' in text[i][0]:
+    if '' in text[i][0]:  ### NAME ###
         my_days = text[i][:-1]
         time_data = my_days
         combined_time_data = []
@@ -82,11 +76,11 @@ for i in range(len(text)):
 
     
     if 'MONDAY' in text[i] and '2025' in text[i][0].split('/'):
-        
+        print('big dingus')
         dates_raw = text[i]
     
     elif 'MONDAY' not in text[i] and '2025' in text[i][0].split('/'):
-        
+        print('little dingus')
         dates_raw = text[i]
     
 dates = []
@@ -144,22 +138,47 @@ for i in range(len(time_groups)):
         print(f"Skipping time group due to missing date: {time_groups[i]}")
         continue
 
-    start_time = f"{dates[i]}T{time_groups[i][0]}:00"
-    end_time = f"{dates[i]}T{time_groups[i][1]}:00"
+    start_time = datetime.fromisoformat(f"{dates[i]}T{time_groups[i][0]}:00").replace(tzinfo=timezone.utc).isoformat()
+    end_time = datetime.fromisoformat(f"{dates[i]}T{time_groups[i][1]}:00").replace(tzinfo=timezone.utc).isoformat()
 
     if start_time >= end_time:
         print(f"Skipping invalid time range: start_time={start_time}, end_time={end_time}")
+        continue
+
+    # Check for duplicate event directly with an if statement
+    try:
+        events_result = calendar_service.events().list(
+            calendarId='primary',
+            timeMin=start_time,
+            timeMax=end_time,
+            singleEvents=True,
+            orderBy='startTime',
+            q='Work'
+        ).execute()
+
+        duplicate_found = False
+        for existing_event in events_result.get('items', []):
+            if existing_event.get('summary', '').strip().lower() == 'work':
+                print(f"Skipping duplicate event: {start_time} to {end_time}")
+                duplicate_found = True
+                break
+
+        if duplicate_found:
+            continue
+
+    except HttpError as error:
+        print(f"An error occurred while checking for duplicates: {error}")
         continue
 
     event = {
         'summary': 'Work',
         'start': {
             'dateTime': start_time,
-            'timeZone': 'America/Chicago',  # Adjust to your timezone
+
         },
         'end': {
             'dateTime': end_time,
-            'timeZone': 'America/Chicago',  # Adjust to your timezone
+
         },
     }
 
