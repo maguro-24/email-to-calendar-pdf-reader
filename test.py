@@ -13,7 +13,7 @@ from datetime import datetime
 
 
 
-client_file = 'client_secret_new.json'
+client_file = 'client_secret.json'
 service = init_gmail_service(client_file)
 
 messages = get_email_messages(service, max_results=100)
@@ -21,14 +21,14 @@ messages = get_email_messages(service, max_results=100)
 for msg in messages:
     detail = get_email_message_details(service, msg['id'])
 
-    if '@newbalance' in detail['sender']:
-        download_attachments(service,'me',msg['id'],'/Users/vincentchan/Projects/work_schedule/downloads')
+    if '### employer email ###' in detail['sender']:
+        download_attachments(service,'me',msg['id'],'/path/to/your/project/work_schedule/downloads')
         break
         
 
 
 
-path = '/Users/vincentchan/Projects/work_schedule/downloads'
+path = '###/path/to/your/project/work_schedule/downloads###'
 dir_list = os.listdir(path)
 print("Files and directories in '", path, "' :")
 # prints all files
@@ -58,7 +58,7 @@ for i in range(len(text)):
 
 for i in range(len(text)):
     text[i] = text[i][0].split(' ')
-    if 'Vince' in text[i][0]:
+    if '### NAME ###' in text[i][0]:
         my_days = text[i][:-1]
         time_data = my_days
         combined_time_data = []
@@ -82,11 +82,11 @@ for i in range(len(text)):
 
     
     if 'MONDAY' in text[i] and '2025' in text[i][0].split('/'):
-        print('big dingus')
+        
         dates_raw = text[i]
     
     elif 'MONDAY' not in text[i] and '2025' in text[i][0].split('/'):
-        print('little dingus')
+        
         dates_raw = text[i]
     
 dates = []
