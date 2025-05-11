@@ -21,22 +21,26 @@ messages = get_email_messages(service, max_results=100)
 for msg in messages:
     detail = get_email_message_details(service, msg['id'])
 
-    if '### @employer email ### ' in detail['sender']:
-        download_attachments(service,'me',msg['id'],'### project location ###')
+    if '@newbalance' in detail['sender']:
+        download_attachments(service,'me',msg['id'],'/Users/vincentchan/Projects/work_schedule/downloads')
         break
         
 
 
 
-path = '### project location ###'
+path = '/Users/vincentchan/Projects/work_schedule/downloads'
 dir_list = os.listdir(path)
 print("Files and directories in '", path, "' :")
 # prints all files
+
 print(dir_list)
-
 text = []
+pdf = None
+for item in dir_list:
+    if item.endswith('.pdf'):
+        pdf = item
 
-with open(f'downloads/{dir_list[0]}', 'rb') as f:
+with open(f'downloads/{pdf}', 'rb') as f:
     pdf_reader = PdfReader(f)
     num_page = len(pdf_reader.pages)
 
@@ -50,11 +54,11 @@ with open(f'downloads/{dir_list[0]}', 'rb') as f:
 for i in range(len(text)):
     text[i] = [text[i]]
 
-print(text)
+
 
 for i in range(len(text)):
     text[i] = text[i][0].split(' ')
-    if '### NAME ###' in text[i][0]:
+    if 'Vince' in text[i][0]:
         my_days = text[i][:-1]
         time_data = my_days
         combined_time_data = []
@@ -85,11 +89,6 @@ for i in range(len(text)):
         print('little dingus')
         dates_raw = text[i]
     
-    print(text[i])
-
-
-
-print(dates_raw)
 dates = []
 if dates_raw:
     for date in dates_raw:
@@ -112,6 +111,14 @@ for i in range(len(combined_time_data)-1, -1, -1):
         hour = int(time[0]) + 12  # Convert hour to 24-hour format
         minute = int(time[1])  # Keep the minutes as is
         combined_time_data[i] = f"{hour}:{minute:02d}"  # Update the list with the converted time
+
+    elif 'AM' in combined_time_data[i]:
+        time = combined_time_data[i].replace('AM', '').strip() 
+        time=time.split(':')
+        hour = int(time[0])
+        minute = int(time[1])  # Keep the minutes as is
+        combined_time_data[i] = f"{hour}:{minute:02d}"
+
     if i%3 == 0:
         combined_time_data.pop(i)  # Remove the time data
 time_groups = []
@@ -122,7 +129,6 @@ for i in range(0, len(combined_time_data), 2):
         time_groups.append([combined_time_data[i]])  # Handle the last single element if odd
 
 print(time_groups)
-print(dates)
 
 
 calendar_service = init_calendar_service(client_file)
@@ -164,7 +170,7 @@ for i in range(len(time_groups)):
     except HttpError as error:
         print(f"An error occurred: {error}")
 
-file_path = f'downloads/{dir_list[0]}'
+file_path = f'downloads/{pdf}'
 
 if os.path.exists(file_path):
     os.remove(file_path)
