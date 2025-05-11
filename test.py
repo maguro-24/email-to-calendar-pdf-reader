@@ -173,11 +173,13 @@ for i in range(len(time_groups)):
     event = {
         'summary': 'Work',
         'start': {
-            'dateTime': start_time,
+            'dateTime': start_time.replace("+00:00","").strip(),
+            'timeZone': 'America/Chicago'
 
         },
         'end': {
-            'dateTime': end_time,
+            'dateTime': end_time.replace("+00:00","").strip(),
+            'timeZone': 'America/Chicago'
 
         },
     }
