@@ -198,3 +198,18 @@ if os.path.exists(file_path):
     print(f"File '{file_path}' deleted successfully.")
 else:
     print(f"File '{file_path}' does not exist.")
+
+
+print(r'''
+                                                 
+                                                 
+`7MM"""Yb.     .g8""8q. `7MN.   `7MF'`7MM"""YMM  
+  MM    `Yb. .dP'    `YM. MMN.    M    MM    `7  
+  MM     `Mb dM'      `MM M YMb   M    MM   d    
+  MM      MM MM        MM M  `MN. M    MMmmMM    
+  MM     ,MP MM.      ,MP M   `MM.M    MM   Y  , 
+  MM    ,dP' `Mb.    ,dP' M     YMM    MM     ,M 
+.JMMmmmdP'     `"bmmd"' .JML.    YM  .JMMmmmmMMM 
+                                                 
+                                                 
+''')
