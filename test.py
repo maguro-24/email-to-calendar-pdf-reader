@@ -100,17 +100,17 @@ else:
 
 for i in range(len(combined_time_data)-1, -1, -1):
     if 'PM' in combined_time_data[i]:
-        time = combined_time_data[i].replace('PM', '').strip()  # Remove 'PM' and strip whitespace
-        time = time.split(':')  # Split into hours and minutes
-        hour = int(time[0]) + 12  # Convert hour to 24-hour format
-        minute = int(time[1])  # Keep the minutes as is
+        time_t = combined_time_data[i].replace('PM', '').strip()  # Remove 'PM' and strip whitespace
+        time_t = time_t.split(':')  # Split into hours and minutes
+        hour = int(time_t[0]) + 12  # Convert hour to 24-hour format
+        minute = int(time_t[1])  # Keep the minutes as is
         combined_time_data[i] = f"{hour}:{minute:02d}"  # Update the list with the converted time
 
     elif 'AM' in combined_time_data[i]:
-        time = combined_time_data[i].replace('AM', '').strip() 
-        time=time.split(':')
-        hour = int(time[0])
-        minute = int(time[1])  # Keep the minutes as is
+        time_t = combined_time_data[i].replace('AM', '').strip() 
+        time_t=time_t.split(':')
+        hour = int(time_t[0])
+        minute = int(time_t[1])  # Keep the minutes as is
         combined_time_data[i] = f"{hour}:{minute:02d}"
 
     if i%3 == 0:
@@ -127,6 +127,9 @@ print(time_groups)
 
 calendar_service = init_calendar_service(client_file)
 
+offset_seconds = -time.timezone if time.localtime().tm_isdst == 0 else -time.altzone
+local_offset = timezone(timedelta(seconds=offset_seconds))
+
 for i in range(len(time_groups)):
     if time_groups[i][0] in ['RO', 'OFF', '-']:
         print(f"Skipping invalid time group: {time_groups[i]}")
@@ -138,14 +141,17 @@ for i in range(len(time_groups)):
         print(f"Skipping time group due to missing date: {time_groups[i]}")
         continue
 
-    start_time = datetime.fromisoformat(f"{dates[i]}T{time_groups[i][0]}:00").replace(tzinfo=timezone.utc).isoformat()
-    end_time = datetime.fromisoformat(f"{dates[i]}T{time_groups[i][1]}:00").replace(tzinfo=timezone.utc).isoformat()
 
-    if start_time >= end_time:
-        print(f"Skipping invalid time range: start_time={start_time}, end_time={end_time}")
+    start_dt = datetime.fromisoformat(f"{dates[i]}T{time_groups[i][0]}:00").replace(tzinfo=local_offset)
+    end_dt = datetime.fromisoformat(f"{dates[i]}T{time_groups[i][1]}:00").replace(tzinfo=local_offset)
+
+    if start_dt >= end_dt:
+        print(f"Skipping invalid time range: start_time={start_dt}, end_time={end_dt}")
         continue
 
-    # Check for duplicate event directly with an if statement
+    start_time = start_dt.isoformat()
+    end_time = end_dt.isoformat()
+
     try:
         events_result = calendar_service.events().list(
             calendarId='primary',
@@ -158,8 +164,12 @@ for i in range(len(time_groups)):
 
         duplicate_found = False
         for existing_event in events_result.get('items', []):
-            if existing_event.get('summary', '').strip().lower() == 'work':
-                print(f"Skipping duplicate event: {start_time} to {end_time}")
+            existing_start = datetime.fromisoformat(existing_event['start']['dateTime'])
+            existing_end = datetime.fromisoformat(existing_event['end']['dateTime'])
+
+            if existing_event.get('summary', '').strip().lower() == 'work' and \
+               existing_start == start_dt and existing_end == end_dt:
+                print(f"Skipping duplicate event: {start_dt} to {end_dt}")
                 duplicate_found = True
                 break
 
@@ -173,14 +183,12 @@ for i in range(len(time_groups)):
     event = {
         'summary': 'Work',
         'start': {
-            'dateTime': start_time.replace("+00:00","").strip(),
+            'dateTime': start_time,
             'timeZone': 'America/Chicago'
-
         },
         'end': {
-            'dateTime': end_time.replace("+00:00","").strip(),
+            'dateTime': end_time,
             'timeZone': 'America/Chicago'
-
         },
     }
 
@@ -191,14 +199,13 @@ for i in range(len(time_groups)):
     except HttpError as error:
         print(f"An error occurred: {error}")
 
+# Clean up downloaded PDF
 file_path = f'downloads/{pdf}'
-
 if os.path.exists(file_path):
     os.remove(file_path)
     print(f"File '{file_path}' deleted successfully.")
 else:
     print(f"File '{file_path}' does not exist.")
-
 
 print(r'''
                                                  
@@ -212,4 +219,5 @@ print(r'''
 .JMMmmmdP'     `"bmmd"' .JML.    YM  .JMMmmmmMMM 
                                                  
                                                  
-''')
+''') 
+                                                 
